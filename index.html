@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6f4e">
+<title>Tote QR</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root { --ink:#1d1d1f; --muted:#6e6e73; --line:#e4e2dc; --bg:#f7f7f5; --card:#fff;
+          --accent:#2f6f4e; --accent-ink:#fff; --danger:#b3261e; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; background:var(--bg); color:var(--ink);
+              font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  #app { max-width:720px; margin:0 auto; padding:16px 16px calc(96px + env(safe-area-inset-bottom)); }
+  header.bar { display:flex; align-items:center; gap:10px; min-height:48px; margin-bottom:12px; }
+  header.bar h1 { font-size:1.35rem; margin:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .iconbtn { border:0; background:none; font-size:1.5rem; padding:6px 10px; border-radius:10px; color:var(--ink); }
+  .muted { color:var(--muted); } .small { font-size:.85rem; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+         border:0; border-radius:14px; padding:15px 18px; font:600 1rem system-ui,sans-serif;
+         background:var(--accent); color:var(--accent-ink); }
+  .btn.light { background:var(--card); color:var(--accent); border:1.5px solid var(--accent); }
+  .btn.danger { background:none; color:var(--danger); border:1.5px solid var(--danger); }
+  .btn:disabled { opacity:.45; }
+  .stack > * + * { margin-top:10px; } .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; }
+  input[type=text] { width:100%; padding:14px; font-size:1.05rem; border:1.5px solid var(--line);
+                     border-radius:12px; background:#fff; }
+  input[type=text]:focus { outline:none; border-color:var(--accent); }
+  label.step { display:block; font-weight:600; margin:18px 0 8px; }
+  .hero { text-align:center; padding:48px 12px 24px; }
+  .hero img { width:96px; height:96px; border-radius:24px; }
+  .hero h2 { margin:18px 0 6px; }
+  .tote { display:flex; gap:12px; align-items:center; padding:10px; background:var(--card);
+          border:1px solid var(--line); border-radius:16px; text-decoration:none; color:inherit; }
+  .tote + .tote { margin-top:10px; }
+  .tote .th { width:64px; height:64px; border-radius:12px; background:#eceae4 center/cover; flex:none; }
+  .tote b { display:block; font-size:1.05rem; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .grid .ph { position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:#eceae4; }
+  .grid .ph img { width:100%; height:100%; object-fit:cover; display:block; }
+  .grid .ph span { position:absolute; left:6px; top:6px; background:rgba(0,0,0,.6); color:#fff;
+                   font:600 .75rem system-ui; padding:2px 7px; border-radius:20px; }
+  .grid .ph button { position:absolute; right:4px; top:4px; border:0; width:26px; height:26px;
+                     border-radius:50%; background:rgba(0,0,0,.6); color:#fff; font-size:.9rem; }
+  .empty { border:2px dashed var(--line); border-radius:16px; padding:28px; text-align:center; }
+  .fab { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom));
+         width:min(688px, calc(100% - 32px)); display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .fab .btn { box-shadow:0 6px 18px rgba(0,0,0,.18); }
+  #sticker { width:100%; max-width:340px; display:block; margin:8px auto 16px;
+             border-radius:16px; box-shadow:0 4px 18px rgba(0,0,0,.12); background:#fff; }
+  /* full-screen photo viewer */
+  #viewer { position:fixed; inset:0; background:#000; z-index:20; display:none; flex-direction:column; color:#fff; }
+  #viewer.on { display:flex; }
+  #viewer .top { display:flex; justify-content:space-between; align-items:center; padding:12px 8px;
+                 padding-top:calc(12px + env(safe-area-inset-top)); }
+  #viewer .top button { color:#fff; }
+  #viewer .stage { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:pan-y; }
+  #viewer .stage img { max-width:100%; max-height:100%; }
+  #viewer .cap { text-align:center; padding:12px 12px calc(18px + env(safe-area-inset-bottom)); }
+  /* scanner */
+  #scanner { position:fixed; inset:0; background:#000; z-index:30; display:none; }
+  #scanner.on { display:block; }
+  #scanner video { width:100%; height:100%; object-fit:cover; }
+  #scanner .frame { position:absolute; left:50%; top:45%; width:66vmin; height:66vmin;
+                    transform:translate(-50%,-50%); border:3px solid #fff; border-radius:24px;
+                    box-shadow:0 0 0 100vmax rgba(0,0,0,.45); }
+  #scanner .msg { position:absolute; left:0; right:0; bottom:calc(110px + env(safe-area-inset-bottom));
+                  text-align:center; color:#fff; padding:0 20px; }
+  #scanner .close { position:absolute; left:16px; right:16px; bottom:calc(24px + env(safe-area-inset-bottom)); }
+  #toast { position:fixed; left:50%; bottom:calc(100px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+           background:#1d1d1f; color:#fff; padding:10px 16px; border-radius:20px; font-size:.95rem;
+           opacity:0; transition:opacity .2s; pointer-events:none; z-index:40; max-width:90%; text-align:center; }
+  #toast.on { opacity:1; }
+  .busy { position:fixed; inset:0; background:rgba(247,247,245,.8); z-index:35; display:flex;
+          align-items:center; justify-content:center; font-weight:600; }
+  /* printing: only the sticker */
+  @media print {
+    body * { visibility:hidden; }
+    #sticker, #sticker * { visibility:visible; }
+    #sticker { position:absolute; left:0; top:0; width:2in; box-shadow:none; border-radius:0; margin:0; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="viewer">
+  <div class="top">
+    <button class="iconbtn" data-act="close">✕</button>
+    <span id="vcount"></span>
+    <button class="iconbtn" data-act="del" title="Delete photo">🗑</button>
+  </div>
+  <div class="stage"><img id="vimg" alt=""></div>
+  <div class="cap small" id="vcap"></div>
+</div>
+
+<div id="scanner">
+  <video id="scanvideo" playsinline muted></video>
+  <div class="frame"></div>
+  <div class="msg">Point the camera at a tote's QR sticker</div>
+  <button class="btn light close" id="scanclose">Cancel</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- hidden pickers: camera and gallery -->
+<input type="file" id="pickCamera" accept="image/*" capture="environment" hidden>
+<input type="file" id="pickGallery" accept="image/*" multiple hidden>
+
+<script src="lib/qrcode.js"></script>
+<script src="lib/fflate.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
